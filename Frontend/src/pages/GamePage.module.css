@@ -1,0 +1,250 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-void);
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(13,17,23,0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.backBtn {
+  font-family: var(--font-display);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  background: transparent;
+  border: 1px solid var(--border-mid);
+  color: var(--ivory-muted);
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+}
+
+.backBtn:hover {
+  border-color: var(--gold-mid);
+  color: var(--gold-light);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brandIcon {
+  font-size: 20px;
+  color: var(--gold-bright);
+  filter: drop-shadow(0 0 8px rgba(212,168,67,0.4));
+}
+
+.brandName {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: var(--ivory);
+}
+
+.gameId {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gameIdLabel {
+  font-family: var(--font-display);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ivory-muted);
+}
+
+.gameIdVal {
+  font-size: 12px;
+  color: var(--gold-mid);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gameIdVal:hover { border-color: var(--gold-mid); }
+
+/* ── Main layout ── */
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: auto 280px;
+  gap: 28px;
+  padding: 24px 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  align-items: start;
+  animation: fadeIn 0.4s var(--transition);
+}
+
+/* ── Board section ── */
+.boardSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.clockRow {
+  width: 100%;
+  max-width: min(560px, 90vw);
+}
+
+.boardContainer {
+  position: relative;
+}
+
+/* Waiting state */
+.waiting {
+  width: min(560px, 90vw);
+  height: min(560px, 90vw);
+  background: var(--bg-card);
+  border: 2px solid var(--border-mid);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: var(--ivory-muted);
+  font-style: italic;
+}
+
+.waitingSpinner {
+  width: 48px; height: 48px;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--gold-mid);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.shareHint {
+  font-size: 14px;
+  text-align: center;
+}
+
+.shareHint code {
+  display: block;
+  margin-top: 6px;
+  color: var(--gold-mid);
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  background: var(--bg-elevated);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  word-break: break-all;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: sticky;
+  top: 80px;
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.statusDot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.statusBadge.waiting {
+  background: rgba(120,120,140,0.1);
+  border-color: rgba(120,120,140,0.3);
+  color: var(--ivory-muted);
+}
+.statusBadge.waiting .statusDot {
+  background: var(--ivory-muted);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.statusBadge.active {
+  background: rgba(184,144,42,0.08);
+  border-color: var(--border-mid);
+  color: var(--gold-light);
+}
+.statusBadge.active .statusDot {
+  background: var(--gold-bright);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.statusBadge.finished {
+  background: rgba(120,120,140,0.08);
+  border-color: var(--border-subtle);
+  color: var(--ivory-muted);
+}
+.statusBadge.finished .statusDot { background: var(--ivory-muted); }
+
+.errorToast {
+  background: rgba(192,49,74,0.12);
+  border: 1px solid rgba(192,49,74,0.35);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  color: var(--crimson-bright);
+  font-size: 13px;
+  animation: fadeIn 0.2s;
+}
+
+.historyWrapper {
+  height: 320px;
+  overflow: hidden;
+}
+
+/* ── Responsive ── */
+@media (max-width: 820px) {
+  .main {
+    grid-template-columns: 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .historyWrapper {
+    height: 200px;
+  }
+}

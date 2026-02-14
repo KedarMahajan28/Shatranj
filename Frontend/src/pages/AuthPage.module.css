@@ -1,0 +1,195 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative chessboard-inspired corners */
+.cornerTL, .cornerBR {
+  position: fixed;
+  width: 220px;
+  height: 220px;
+  pointer-events: none;
+}
+
+.cornerTL {
+  top: -40px; left: -40px;
+  background:
+    repeating-conic-gradient(
+      rgba(184,144,42,0.06) 0% 25%,
+      transparent 0% 50%
+    ) 0 0 / 40px 40px;
+  mask-image: radial-gradient(circle at 0 0, black 40%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 0 0, black 40%, transparent 70%);
+}
+
+.cornerBR {
+  bottom: -40px; right: -40px;
+  background:
+    repeating-conic-gradient(
+      rgba(184,144,42,0.06) 0% 25%,
+      transparent 0% 50%
+    ) 0 0 / 40px 40px;
+  mask-image: radial-gradient(circle at 100% 100%, black 40%, transparent 70%);
+  -webkit-mask-image: radial-gradient(circle at 100% 100%, black 40%, transparent 70%);
+}
+
+.card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 48px 44px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-deep);
+  animation: slideUp 0.5s var(--transition);
+  position: relative;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 60%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-mid), transparent);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.logoIcon {
+  font-size: 36px;
+  color: var(--gold-bright);
+  filter: drop-shadow(0 0 12px rgba(212,168,67,0.4));
+}
+
+.logoText {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: var(--ivory);
+  text-shadow: 0 0 30px rgba(212,168,67,0.2);
+}
+
+.tagline {
+  text-align: center;
+  font-style: italic;
+  color: var(--ivory-muted);
+  font-size: 14px;
+  margin-bottom: 32px;
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--bg-surface);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  margin-bottom: 28px;
+  border: 1px solid var(--border-subtle);
+}
+
+.tab {
+  padding: 9px;
+  background: transparent;
+  border: none;
+  color: var(--ivory-muted);
+  font-size: 13px;
+  border-radius: calc(var(--radius-md) - 2px);
+  transition: all 0.2s;
+}
+
+.tab:hover { color: var(--ivory); }
+
+.activeTab {
+  background: var(--bg-card);
+  color: var(--gold-light);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ivory-muted);
+}
+
+.error {
+  background: rgba(192, 49, 74, 0.12);
+  border: 1px solid rgba(192, 49, 74, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--crimson-bright);
+  font-size: 14px;
+  animation: fadeIn 0.2s;
+}
+
+.submit {
+  margin-top: 8px;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--gold-deep), var(--gold-mid));
+  border: 1px solid var(--gold-mid);
+  color: var(--ivory);
+  font-size: 13px;
+  border-radius: var(--radius-md);
+  letter-spacing: 0.08em;
+  transition: all 0.25s var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.submit::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.submit:not(:disabled):hover {
+  box-shadow: 0 4px 20px rgba(184,144,42,0.35), 0 0 8px rgba(184,144,42,0.2);
+  transform: translateY(-1px);
+}
+
+.submit:not(:disabled):hover::before { opacity: 1; }
+
+.submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
