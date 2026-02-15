@@ -39,3 +39,7 @@ export const getGame     = (gameId)     => api.get(`/games/${gameId}`);
 export const resignGame  = (gameId)     => api.post(`/games/${gameId}/resign`);
 export const finishGame  = (gameId, data) => api.post(`/games/${gameId}/finish`, data);
 export const spectateGame = (gameId)   => api.post(`/games/${gameId}/spectate`);
+
+
+//ratings
+export const ratingUpdate = (data) => api.post(`/save/${gameId}`,data);

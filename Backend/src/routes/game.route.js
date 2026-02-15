@@ -17,7 +17,7 @@ router.route("/create").post(verifyJwt, createGame)
 
 router.route("/:gameId/join").post(verifyJwt, joinGame)
 
-router.route("/:gameId").get(verifyJwt, getGameById)
+router.route("/:gameId").get( getGameById)
 
 
 router.route("/:gameId/resign").post(verifyJwt, resignGame)

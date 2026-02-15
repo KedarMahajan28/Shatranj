@@ -9,7 +9,7 @@ import {
 
 const router = Router()
 
-router.route("/save").post(verifyJwt, saveRating)
+router.route("/save/:gameId").post(verifyJwt, saveRating)
 
 router.route("/me").get(verifyJwt, getRatingsByUser)
 

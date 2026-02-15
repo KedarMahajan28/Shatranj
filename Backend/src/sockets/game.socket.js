@@ -1,5 +1,7 @@
 import { Chess } from "chess.js";
 import { Game } from "../models/game.model.js";
+import {User} from "../models/user.model.js"
+import {Rating} from "../models/rating.model.js"
 
 
 const activeSessions = new Map();
@@ -7,7 +9,11 @@ const activeSessions = new Map();
 const TIME_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
 const TICK_MS = 1000; // timer resolution
 
-// ─── helpers
+//helpers
+function calculateElo(ratingA, ratingB, scoreA, k = 32) {
+  const expectedA = 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
+  return Math.round(ratingA + k * (scoreA - expectedA));
+}
 
 function createSession(gameId, fen) {
   return {
@@ -51,25 +57,87 @@ function startTick(io, gameId, session, color) {
 }
 
 async function handleGameEnd(io, gameId, session, winner, reason) {
-  // Stop both clocks
   clearTick(session, "white");
   clearTick(session, "black");
 
   const finalFen = session.chess.fen();
   const moveHistory = session.chess.history();
 
-
   try {
-    await Game.findByIdAndUpdate(gameId, {
-      status: "finished",
-      currentFEN: finalFen,
-      moveHistory,
-      winner: winner, // "white" | "black" | "draw"
-      resultReason: reason, // "checkmate" | "timeout" | "resign" | "draw"
-      endedAt: new Date(),
-    });
+    const game = await Game.findById(gameId);
+    if (!game || game.status === "finished") return;
+
+    game.status = "finished";
+    game.currentFEN = finalFen;
+    game.moveHistory = moveHistory;
+    game.winner = winner;
+    game.resultReason = reason;
+    game.endedAt = new Date();
+
+    await game.save();
+
+    const whiteId = game.whitePlayer;
+    const blackId = game.blackPlayer;
+
+    // ── UPDATE STATS + RATINGS
+const whiteUser = await User.findById(whiteId).select("rating");
+const blackUser = await User.findById(blackId).select("rating");
+
+const whiteRating = whiteUser.rating ?? 1200;
+const blackRating = blackUser.rating ?? 1200;
+
+if (winner === "draw") {
+  const newWhiteRating = calculateElo(whiteRating, blackRating, 0.5);
+  const newBlackRating = calculateElo(blackRating, whiteRating, 0.5);
+
+  await User.updateMany(
+    { _id: { $in: [whiteId, blackId] } },
+    {
+      $inc: {
+        gamesPlayed: 1,
+        draws: 1
+      }
+    }
+  );
+
+  await User.findByIdAndUpdate(whiteId, { rating: newWhiteRating });
+  await User.findByIdAndUpdate(blackId, { rating: newBlackRating });
+
+} else {
+  const winnerId = winner === "white" ? whiteId : blackId;
+  const loserId  = winner === "white" ? blackId : whiteId;
+
+  const winnerRating = winner === "white" ? whiteRating : blackRating;
+  const loserRating  = winner === "white" ? blackRating : whiteRating;
+
+  const newWinnerRating = calculateElo(winnerRating, loserRating, 1);
+  const newLoserRating  = calculateElo(loserRating, winnerRating, 0);
+
+  await User.findByIdAndUpdate(winnerId, {
+    $inc: {
+      gamesPlayed: 1,
+      wins: 1
+    },
+    $set: { rating: newWinnerRating }
+  });
+
+  await User.findByIdAndUpdate(loserId, {
+    $inc: {
+      gamesPlayed: 1,
+      losses: 1
+    },
+    $set: { rating: newLoserRating }
+  });
+}
+
+
+    
+    
+
+
+
   } catch (err) {
-    console.error("[socket] Failed to persist game result:", err.message);
+    console.error("[socket] Failed to finalize game:", err.message);
   }
 
   io.to(gameId).emit("gameOver", {
@@ -77,16 +145,17 @@ async function handleGameEnd(io, gameId, session, winner, reason) {
     reason,
     fen: finalFen,
     moves: moveHistory,
-    timers: session.timers,
+    timers: session.timers
   });
 
   activeSessions.delete(gameId);
 }
 
-// ─── socket handler
+
+//  socket handler
 
 const gameSocket = (io, socket) => {
-  // ── joinGame 
+  // joinGame 
   socket.on("joinGame", async ({ gameId }) => {
     try {
       const game = await Game.findById(gameId)
@@ -140,7 +209,7 @@ const gameSocket = (io, socket) => {
     }
   });
 
-  // ── makeMove ──────────────────────────────────────────────────────────────
+  //  makeMove 
   socket.on("makeMove", async ({ gameId, from, to, promotion }) => {
     try {
       const session = activeSessions.get(gameId);
@@ -172,7 +241,7 @@ const gameSocket = (io, socket) => {
       clearTick(session, currentTurn);
       const nextTurn = chess.turn() === "w" ? "white" : "black";
 
-      // Update FEN in DB (lightweight – no move documents)
+      // Update FEN in DB 
       await Game.findByIdAndUpdate(gameId, { currentFEN: chess.fen() });
 
       // Broadcast the move to everyone in the room
@@ -199,7 +268,7 @@ const gameSocket = (io, socket) => {
     }
   });
 
-  // ── resign 
+  //  resign 
   socket.on("resign", async ({ gameId }) => {
     try {
       const session = activeSessions.get(gameId);
@@ -219,7 +288,7 @@ const gameSocket = (io, socket) => {
     }
   });
 
-  // ── offerDraw
+  //  offerDraw
   socket.on("offerDraw", async ({ gameId }) => {
     try {
       const session = activeSessions.get(gameId);
@@ -242,7 +311,7 @@ const gameSocket = (io, socket) => {
     }
   });
 
-  // ── respondDraw 
+  //  respondDraw 
   socket.on("respondDraw", async ({ gameId, accept }) => {
     try {
       const session = activeSessions.get(gameId);
@@ -270,7 +339,7 @@ const gameSocket = (io, socket) => {
     }
   });
 
-  // ── addSpectator 
+  //  addSpectator 
   socket.on("addSpectator", ({ gameId }) => {
     socket.join(gameId);
     io.to(gameId).emit("spectatorJoined", { userId: socket.user._id });
@@ -287,7 +356,7 @@ const gameSocket = (io, socket) => {
     }
   });
 
-  // ── leaveGame 
+  // leaveGame 
   socket.on("leaveGame", () => {
     if (!socket.gameId) return;
     socket.leave(socket.gameId);
@@ -295,7 +364,7 @@ const gameSocket = (io, socket) => {
     socket.gameId = null;
   });
 
-  // ── disconnect 
+  // disconnect 
   socket.on("disconnect", async () => {
     if (!socket.gameId) return;
     io.to(socket.gameId).emit("playerDisconnected", { userId: socket.user._id });

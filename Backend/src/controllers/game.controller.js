@@ -115,6 +115,8 @@ const finishGame = asyncHandler(async (req, res) => {
   game.resultReason = reason
   game.endedAt = new Date()
 
+
+  
   await game.save()
 
   return res

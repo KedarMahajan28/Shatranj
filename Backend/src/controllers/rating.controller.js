@@ -12,7 +12,8 @@ const calculateRatingChange = (result) => {
 }
 
 const saveRating = asyncHandler(async (req, res) => {
-  const { gameId, result } = req.body
+  const {  result } = req.body
+  const {gameId} = req.params
 
   if (!gameId || !result) {
     throw new ApiError(400, "Game ID and result are required")

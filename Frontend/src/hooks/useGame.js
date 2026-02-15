@@ -74,7 +74,7 @@ function reducer(state, action) {
   }
 }
 
-// ── Hook ─────────────────────────────────────────────────────────────────────
+// ── Hook 
 export function useGame(gameId, userId) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const socketRef = useRef(null);
