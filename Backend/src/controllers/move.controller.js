@@ -1,5 +1,5 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { ApiResponse } from "../utils/apiResponse.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
 import { ApiError } from "../utils/apiError.js"
 import { Move } from "../models/move.model.js"
 import { Game } from "../models/game.model.js"

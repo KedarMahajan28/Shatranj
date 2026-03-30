@@ -1,6 +1,6 @@
 import path from "path"
 import { asyncHandler } from "../utils/asyncHandler.js"
-import { ApiResponse } from "../utils/apiResponse.js"
+import { ApiResponse } from "../utils/ApiResponse.js"
 import { ApiError } from "../utils/apiError.js"
 import jwt from "jsonwebtoken"
 import { validateHeaderName } from "http"
