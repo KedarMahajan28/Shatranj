@@ -17,14 +17,15 @@ api.interceptors.response.use(
 
       try {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/refresh-accestoken`,
+          `${import.meta.env.VITE_API_URL}/api/v1/users/refresh-access-token`, // ✅ FIXED
           {},
           { withCredentials: true }
         );
 
         return api(original);
       } catch {
-        window.location.href = '/login';
+        // ✅ REDIRECT TO FRONTEND, NOT BACKEND
+        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
       }
     }
 
