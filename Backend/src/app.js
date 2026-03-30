@@ -37,8 +37,8 @@ const frontendPath = path.resolve(__dirname, '../Frontend/dist');
 
 app.use(express.static(frontendPath));
 
-
 app.use((req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
+//app.get('/*', (req, res) => { res.sendFile(path.join(frontendPath, 'index.html')); });
 export {app};
