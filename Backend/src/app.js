@@ -1,41 +1,44 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import path, { fileURLToPath } from 'path';
-import { urlToFileSystemPath } from 'url'; // Note: for ESM dirname
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// __dirname setup (ESM)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const app = express()
+const app = express();
 
+// middlewares
 app.use(cors({
     origin: process.env.CORS_ORIGIN,
     credentials: true
-}))
+}));
 
-app.use(express.json({limit: "16kb"}))
-app.use(express.urlencoded({extended: true, limit: "16kb"}))
+app.use(express.json({ limit: "16kb" }));
+app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(cookieParser());
+app.use(express.static("public"));
 
-// Serve React frontend in production
-app.use(express.static(path.resolve(__dirname, '../Frontend/dist')));
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../Frontend/dist/index.html'));
-});
 
-app.use(express.static("public"))
-app.use(cookieParser())
-
-//routes
 import userRouter from './routes/user.route.js';
-import gameRouter from './routes/game.route.js'
-import moveRouter from './routes/move.route.js'
-import ratingRouter from './routes/rating.route.js'
-//routes declaration
-app.use("/api/v1/users",userRouter)
-app.use("/api/v1/games",gameRouter)
-app.use("/api/v1/moves",moveRouter)
-app.use("/api/v1/rating",ratingRouter)
+import gameRouter from './routes/game.route.js';
+import moveRouter from './routes/move.route.js';
+import ratingRouter from './routes/rating.route.js';
+
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/games", gameRouter);
+app.use("/api/v1/moves", moveRouter);
+app.use("/api/v1/rating", ratingRouter);
 
 
-export {app}
+const frontendPath = path.resolve(__dirname, '../Frontend/dist');
+
+app.use(express.static(frontendPath));
+
+
+app.use((req, res) => {
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
+export {app};
