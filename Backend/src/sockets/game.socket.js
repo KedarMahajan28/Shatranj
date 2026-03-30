@@ -79,56 +79,93 @@ async function handleGameEnd(io, gameId, session, winner, reason) {
     const whiteId = game.whitePlayer;
     const blackId = game.blackPlayer;
 
-    // ── UPDATE STATS + RATINGS
-const whiteUser = await User.findById(whiteId).select("rating");
-const blackUser = await User.findById(blackId).select("rating");
+    // Update stats/ratings and persist per-game rating history for profile graph.
+    const whiteUser = await User.findById(whiteId).select("rating");
+    const blackUser = await User.findById(blackId).select("rating");
 
-const whiteRating = whiteUser.rating ?? 1200;
-const blackRating = blackUser.rating ?? 1200;
+    const whiteRating = whiteUser?.rating ?? 1200;
+    const blackRating = blackUser?.rating ?? 1200;
 
-if (winner === "draw") {
-  const newWhiteRating = calculateElo(whiteRating, blackRating, 0.5);
-  const newBlackRating = calculateElo(blackRating, whiteRating, 0.5);
+    if (winner === "draw") {
+      const newWhiteRating = calculateElo(whiteRating, blackRating, 0.5);
+      const newBlackRating = calculateElo(blackRating, whiteRating, 0.5);
 
-  await User.updateMany(
-    { _id: { $in: [whiteId, blackId] } },
-    {
-      $inc: {
-        gamesPlayed: 1,
-        draws: 1
-      }
+      await User.updateMany(
+        { _id: { $in: [whiteId, blackId] } },
+        {
+          $inc: {
+            gamesPlayed: 1,
+            draws: 1
+          }
+        }
+      );
+
+      await User.findByIdAndUpdate(whiteId, { rating: newWhiteRating });
+      await User.findByIdAndUpdate(blackId, { rating: newBlackRating });
+
+      await Rating.insertMany([
+        {
+          userId: whiteId,
+          gameId: game._id,
+          before: whiteRating,
+          after: newWhiteRating,
+          change: newWhiteRating - whiteRating,
+          result: "draw"
+        },
+        {
+          userId: blackId,
+          gameId: game._id,
+          before: blackRating,
+          after: newBlackRating,
+          change: newBlackRating - blackRating,
+          result: "draw"
+        }
+      ]);
+    } else {
+      const winnerId = winner === "white" ? whiteId : blackId;
+      const loserId = winner === "white" ? blackId : whiteId;
+
+      const winnerRating = winner === "white" ? whiteRating : blackRating;
+      const loserRating = winner === "white" ? blackRating : whiteRating;
+
+      const newWinnerRating = calculateElo(winnerRating, loserRating, 1);
+      const newLoserRating = calculateElo(loserRating, winnerRating, 0);
+
+      await User.findByIdAndUpdate(winnerId, {
+        $inc: {
+          gamesPlayed: 1,
+          wins: 1
+        },
+        $set: { rating: newWinnerRating }
+      });
+
+      await User.findByIdAndUpdate(loserId, {
+        $inc: {
+          gamesPlayed: 1,
+          losses: 1
+        },
+        $set: { rating: newLoserRating }
+      });
+
+      await Rating.insertMany([
+        {
+          userId: winnerId,
+          gameId: game._id,
+          before: winnerRating,
+          after: newWinnerRating,
+          change: newWinnerRating - winnerRating,
+          result: "win"
+        },
+        {
+          userId: loserId,
+          gameId: game._id,
+          before: loserRating,
+          after: newLoserRating,
+          change: newLoserRating - loserRating,
+          result: "loss"
+        }
+      ]);
     }
-  );
-
-  await User.findByIdAndUpdate(whiteId, { rating: newWhiteRating });
-  await User.findByIdAndUpdate(blackId, { rating: newBlackRating });
-
-} else {
-  const winnerId = winner === "white" ? whiteId : blackId;
-  const loserId  = winner === "white" ? blackId : whiteId;
-
-  const winnerRating = winner === "white" ? whiteRating : blackRating;
-  const loserRating  = winner === "white" ? blackRating : whiteRating;
-
-  const newWinnerRating = calculateElo(winnerRating, loserRating, 1);
-  const newLoserRating  = calculateElo(loserRating, winnerRating, 0);
-
-  await User.findByIdAndUpdate(winnerId, {
-    $inc: {
-      gamesPlayed: 1,
-      wins: 1
-    },
-    $set: { rating: newWinnerRating }
-  });
-
-  await User.findByIdAndUpdate(loserId, {
-    $inc: {
-      gamesPlayed: 1,
-      losses: 1
-    },
-    $set: { rating: newLoserRating }
-  });
-}
 
 
     

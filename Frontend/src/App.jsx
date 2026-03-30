@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import AuthPage  from './pages/AuthPage';
 import HomePage  from './pages/HomePage';
 import GamePage  from './pages/GamePage';
+import ProfilePage from './pages/ProfilePage';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,9 @@ export default function App() {
             <ProtectedRoute><GamePage /></ProtectedRoute>
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/profile" element={
+            <ProtectedRoute><ProfilePage /></ProtectedRoute>
+          } />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

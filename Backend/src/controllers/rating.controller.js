@@ -59,7 +59,13 @@ const saveRating = asyncHandler(async (req, res) => {
 const getRatingsByUser = asyncHandler(async (req, res) => {
   const ratings = await Rating.find({ userId: req.user._id })
     .sort({ createdAt: -1 })
-    .populate("gameId")
+    .populate({
+      path: "gameId",
+      populate: [
+        { path: "whitePlayer", select: "username" },
+        { path: "blackPlayer", select: "username" }
+      ]
+    })
 
   return res
     .status(200)

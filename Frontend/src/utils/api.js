@@ -42,4 +42,6 @@ export const spectateGame = (gameId)   => api.post(`/games/${gameId}/spectate`);
 
 
 //ratings
-export const ratingUpdate = (data) => api.post(`/save/${gameId}`,data);
+export const getMyRatings = () => api.get('/rating/me');
+export const getGameRatings = (gameId) => api.get(`/rating/game/${gameId}`);
+

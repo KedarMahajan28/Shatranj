@@ -56,10 +56,14 @@ export default function HomePage() {
         </div>
         <div className={styles.userBar}>
           <div className={styles.userInfo}>
-            <span className={styles.username}>{user?.username}</span>
+            <button className={styles.username} onClick={() => navigate('/profile')}>
+              {user?.username} 
+            </button>
             <span className={styles.rating}>{user?.rating ?? 1200} ELO</span>
           </div>
-          <button className={styles.logoutBtn} onClick={logout}>Sign out</button>
+          <button className={styles.logoutBtn} onClick={logout}>
+            Sign out
+          </button>
         </div>
       </header>
 
