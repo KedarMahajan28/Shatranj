@@ -7,11 +7,11 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'https://shatranj-8pbb.onrender.com/',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:8000',
+        target: 'https://shatranj-8pbb.onrender.com/',
         ws: true,
         changeOrigin: true,
       }
