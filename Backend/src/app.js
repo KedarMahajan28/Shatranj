@@ -35,7 +35,7 @@ app.use("/api/v1/moves", moveRouter);
 app.use("/api/v1/rating", ratingRouter);
 
 
-const frontendPath = path.resolve(__dirname, '../Frontend');
+const frontendPath = path.resolve(__dirname, '../Frontend/dist');
 
 app.use(express.static(frontendPath));
 
