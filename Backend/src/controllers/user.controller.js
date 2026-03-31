@@ -102,9 +102,10 @@ if(!isPassValid){
 
  const options = {
   httpOnly: true,
-  secure: true,
-  sameSite: "none"
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
 };
+
 
 
   
@@ -158,9 +159,10 @@ const refreshAccessToken = asyncHandler(async (req,res)=>{
     throw new ApiError(401,"Refresh token is expired")
   }
 
-  const options={
+const options={
     httpOnly : true,
-    secure : true
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
   }
 
 const {accessToken,refreshToken} =  await generateAccessandRefreshTokens(user._id)

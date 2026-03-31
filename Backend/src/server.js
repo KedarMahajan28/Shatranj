@@ -36,7 +36,7 @@ connectDB().then(() => {
       socket.user = user;
       next();
     } catch {
-      next(new Error('Unauthorized'));
+      next(new Error('Unauthorized socket connection'));
     }
   });
 

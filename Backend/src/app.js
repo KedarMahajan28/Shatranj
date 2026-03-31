@@ -11,8 +11,10 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // middlewares
+app.set('trust proxy', 1); // Render proxy support
+
 app.use(cors({
-    origin: true,
+    origin: process.env.CORS_ORIGIN || true,
     credentials: true
 }));
 
@@ -33,12 +35,17 @@ app.use("/api/v1/moves", moveRouter);
 app.use("/api/v1/rating", ratingRouter);
 
 
-const frontendPath = path.resolve(__dirname, '../Frontend/dist');
+const frontendPath = path.resolve(__dirname, '../Frontend');
 
 app.use(express.static(frontendPath));
 
 app.use((req, res) => {
     res.sendFile(path.join(frontendPath, 'index.html'));
 });
+
+// Handle 404 explicitly before catch-all
+// app.use('/*', (req, res) => {
+//     res.sendFile(path.join(frontendPath, 'index.html'));
+// });
 //app.get('/*', (req, res) => { res.sendFile(path.join(frontendPath, 'index.html')); });
 export {app};
