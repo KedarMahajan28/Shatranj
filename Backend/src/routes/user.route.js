@@ -10,10 +10,8 @@ router.route("/login").post(loginUser)
 
 router.route("/logout").post(verifyJwt,logoutUser)
 
-router.route("/refresh-accestoken").post(verifyJwt,refreshAccessToken)
+router.route("/refresh-access-token").post(verifyJwt,refreshAccessToken)
 
 router.route("/me").get(verifyJwt,getCurrentUser)
-
-
 
 export default router

@@ -6,26 +6,34 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Auto-refresh access token on 401
+
 api.interceptors.response.use(
   res => res,
   async err => {
     const original = err.config;
 
+    
     if (err.response?.status === 401 && !original._retry) {
       original._retry = true;
 
+      
+      if (original.url?.includes('/users/me')) {
+        return Promise.reject(err);
+      }
+
       try {
         await axios.post(
-          `${import.meta.env.VITE_API_URL}/api/v1/users/refresh-access-token`, // ✅ FIXED
+          `${import.meta.env.VITE_API_URL}/api/v1/users/refresh-access-token`,
           {},
           { withCredentials: true }
         );
 
         return api(original);
       } catch {
-        // ✅ REDIRECT TO FRONTEND, NOT BACKEND
-        window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
+        
+        if (!original.url?.includes('/users')) {
+          window.location.href = `${import.meta.env.VITE_FRONTEND_URL}/login`;
+        }
       }
     }
 
