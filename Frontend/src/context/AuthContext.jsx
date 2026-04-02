@@ -9,17 +9,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const publicRoutes = ["/login", "/register"];
+    const checkAuth = async () => {
+      try {
+        const res = await getMe();
+        setUser(res.data.data);
+      } catch (err) {
+        // User is not authenticated, set to null
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (publicRoutes.includes(window.location.pathname)) {
-      setLoading(false);
-      return;
-    }
-
-    getMe()
-      .then(res => setUser(res.data.data))
-      .catch(() => setUser(null))
-      .finally(() => setLoading(false));
+    checkAuth();
   }, []);
 
   const login = useCallback(async (credentials) => {
