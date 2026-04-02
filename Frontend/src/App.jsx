@@ -31,6 +31,7 @@ function ProtectedRoute({ children }) {
 
 function PublicRoute({ children }) {
   const { user, loading } = useAuth();
+  // Don't redirect until loading is complete
   if (loading) return null;
   return user ? <Navigate to="/" replace /> : children;
 }
@@ -49,10 +50,10 @@ export default function App() {
           <Route path="/game/:gameId" element={
             <ProtectedRoute><GamePage /></ProtectedRoute>
           } />
-          <Route path="*" element={<Navigate to="/" replace />} />
           <Route path="/profile" element={
             <ProtectedRoute><ProfilePage /></ProtectedRoute>
           } />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

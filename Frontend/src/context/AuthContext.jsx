@@ -10,13 +10,15 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const checkAuth = async () => {
+      
       try {
         const res = await getMe();
         setUser(res.data.data);
       } catch (err) {
-        // User is not authenticated, set to null
+        
         setUser(null);
       } finally {
+       
         setLoading(false);
       }
     };
