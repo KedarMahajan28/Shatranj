@@ -12,11 +12,19 @@ import { User } from './models/user.model.js';
 connectDB().then(() => {
   const server = http.createServer(app);
 
+  // ✅ IMPROVED Socket.IO CORS configuration for production
+  const corsOrigins = process.env.CORS_ORIGIN 
+    ? process.env.CORS_ORIGIN.split(',').map(url => url.trim())
+    : ['http://localhost:3000'];
+
   const io = new Server(server, {
     cors: {
-      origin: process.env.CORS_ORIGIN,
+      origin: corsOrigins,
       credentials: true,
+      methods: ['GET', 'POST'],
+      allowEIO3: true,
     },
+    transports: ['websocket', 'polling'], // ✅ Allow both WebSocket and polling
   });
 
   // ── Socket auth middleware 
@@ -35,17 +43,19 @@ connectDB().then(() => {
 
       socket.user = user;
       next();
-    } catch {
+    } catch (err) {
+      console.error('[Socket Auth Error]', err.message);
       next(new Error('Unauthorized socket connection'));
     }
   });
 
-
   io.on('connection', (socket) => {
+    console.log(`[Socket] User ${socket.user.username} connected:`, socket.id);
     gameSocket(io, socket);
   });
 
   server.listen(process.env.PORT || 8000, () => {
     console.log(`Server running on port ${process.env.PORT}`);
+    console.log(`CORS Origins:`, corsOrigins);
   });
 }).catch(console.error);
