@@ -5,7 +5,7 @@ import { joinGame as apiJoinGame } from '../utils/api';
 
 // State shape
 const INITIAL_STATE = {
-  chess:       null,      // Chess.js instance (not serialisable – handled via ref)
+  chess:       null,      
   fen:         '',
   turn:        'white',
   timers:      { white: 600_000, black: 600_000 },
@@ -78,76 +78,103 @@ function reducer(state, action) {
 export function useGame(gameId, userId) {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
   const socketRef = useRef(null);
+  const joinedRef = useRef(false); // Track if we've already joined to avoid duplicates
 
   // Join the game room via HTTP first, then via socket
   useEffect(() => {
     if (!gameId || !userId) return;
 
-    const socket = getSocket();
-    socketRef.current = socket;
+    let isMounted = true;
 
-    // ── Socket event listeners 
+    const setupGame = async () => {
+      try {
+        const socket = getSocket();
+        socketRef.current = socket;
 
-    socket.on('connect', () => dispatch({ type: 'CONNECTED' }));
-    if (socket.connected) dispatch({ type: 'CONNECTED' });
+        // Socket event listeners 
 
-    socket.on('gameState', payload => {
-      dispatch({ type: 'GAME_STATE', payload });
-    });
+        socket.on('connect', () => dispatch({ type: 'CONNECTED' }));
+        if (socket.connected) dispatch({ type: 'CONNECTED' });
 
-    socket.on('movePlayed', payload => {
-      dispatch({ type: 'MOVE_PLAYED', payload });
-    });
+        socket.on('gameState', payload => {
+          dispatch({ type: 'GAME_STATE', payload });
+        });
 
-    socket.on('clockUpdate', payload => {
-      dispatch({ type: 'CLOCK_UPDATE', payload });
-    });
+        socket.on('movePlayed', payload => {
+          dispatch({ type: 'MOVE_PLAYED', payload });
+        });
 
-    socket.on('gameOver', payload => {
-      dispatch({ type: 'GAME_OVER', payload });
-    });
+        socket.on('clockUpdate', payload => {
+          dispatch({ type: 'CLOCK_UPDATE', payload });
+        });
 
-    socket.on('drawOffered', payload => {
-      dispatch({ type: 'DRAW_OFFERED', payload });
-    });
+        socket.on('gameOver', payload => {
+          dispatch({ type: 'GAME_OVER', payload });
+        });
 
-    socket.on('drawDeclined', () => {
-      dispatch({ type: 'DRAW_DECLINED' });
-    });
+        socket.on('drawOffered', payload => {
+          dispatch({ type: 'DRAW_OFFERED', payload });
+        });
 
-    socket.on('playerJoined', () => {
-      dispatch({ type: 'PLAYER_JOINED' });
-    });
+        socket.on('drawDeclined', () => {
+          dispatch({ type: 'DRAW_DECLINED' });
+        });
 
-    socket.on('moveError', ({ message }) => {
-      dispatch({ type: 'ERROR', payload: message });
-      setTimeout(() => dispatch({ type: 'CLEAR_ERROR' }), 3000);
-    });
+        socket.on('playerJoined', () => {
+          dispatch({ type: 'PLAYER_JOINED' });
+        });
 
-    socket.on('error', ({ message }) => {
-      dispatch({ type: 'ERROR', payload: message });
-      setTimeout(() => dispatch({ type: 'CLEAR_ERROR' }), 3000);
-    });
+        socket.on('moveError', ({ message }) => {
+          dispatch({ type: 'ERROR', payload: message });
+          setTimeout(() => dispatch({ type: 'CLEAR_ERROR' }), 3000);
+        });
 
-    // Announce we've joined
-    socket.emit('joinGame', { gameId });
+        socket.on('error', ({ message }) => {
+          dispatch({ type: 'ERROR', payload: message });
+          setTimeout(() => dispatch({ type: 'CLEAR_ERROR' }), 3000);
+        });
+
+        // Call HTTP API to join game 
+        // This MUST happen before socket emit to ensure DB state is correct
+        if (!joinedRef.current) {
+          joinedRef.current = true;
+          await apiJoinGame(gameId).catch(err => {
+         
+            console.log('[useGame] joinGame HTTP call:', err?.response?.status, err?.response?.data?.message);
+          });
+        }
+
+        // Now emit socket event to join the room
+        if (isMounted) {
+          socket.emit('joinGame', { gameId });
+        }
+      } catch (err) {
+        console.error('[useGame] Setup error:', err);
+        dispatch({ type: 'ERROR', payload: 'Failed to join game' });
+      }
+    };
+
+    setupGame();
 
     return () => {
-      socket.emit('leaveGame');
-      socket.off('connect');
-      socket.off('gameState');
-      socket.off('movePlayed');
-      socket.off('clockUpdate');
-      socket.off('gameOver');
-      socket.off('drawOffered');
-      socket.off('drawDeclined');
-      socket.off('playerJoined');
-      socket.off('moveError');
-      socket.off('error');
+      isMounted = false;
+      if (socketRef.current) {
+        socketRef.current.emit('leaveGame');
+        socketRef.current.off('connect');
+        socketRef.current.off('gameState');
+        socketRef.current.off('movePlayed');
+        socketRef.current.off('clockUpdate');
+        socketRef.current.off('gameOver');
+        socketRef.current.off('drawOffered');
+        socketRef.current.off('drawDeclined');
+        socketRef.current.off('playerJoined');
+        socketRef.current.off('moveError');
+        socketRef.current.off('error');
+      }
     };
   }, [gameId, userId]);
 
-  // ── Actions ─────────────────────────────────────────────────────────────────
+  // ── Actions ──────────────────────────────────────────────────────────────────
 
   const makeMove = useCallback((from, to, promotion) => {
     if (!socketRef.current) return;
