@@ -3,7 +3,6 @@ import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { ApiError } from "../utils/ApiError.js"
 import jwt from "jsonwebtoken"
-import { validateHeaderName } from "http"
 import { User } from "../models/user.model.js"
 
 const generateAccessandRefreshTokens = async (userId)=>{
@@ -14,7 +13,6 @@ const generateAccessandRefreshTokens = async (userId)=>{
       const refreshToken = user.generateRefreshToken();
       
 
-      console.log(accessToken,refreshToken)
       user.refreshToken = refreshToken
       await user.save({validateBeforeSave : false})
     return {accessToken, refreshToken}
@@ -38,7 +36,6 @@ const generateAccessandRefreshTokens = async (userId)=>{
   });
 
   if (existedUser) {
-    console.log(existedUser)
     throw new ApiError(409, "User already exists");
   }
 
@@ -114,7 +111,7 @@ if(!isPassValid){
         .status(200)
         .cookie("accessToken",accessToken,options)
         .cookie("refreshToken",refreshToken,options)
-        .json(new ApiResponse(200, LoggedinUser, accessToken,refreshToken, "User logged in successfully"))
+        .json(new ApiResponse(200, LoggedinUser, "User logged in successfully"))
 
 
   
@@ -180,7 +177,7 @@ const {accessToken,refreshToken} =  await generateAccessandRefreshTokens(user._i
         .status(200)
         .cookie("accessToken",accessToken,options)
         .cookie("refreshToken",refreshToken,options)
-        .json(new ApiResponse(200, null, accessToken ,refreshToken, "Access token refreshed successfully"))
+        .json(new ApiResponse(200, { accessToken, refreshToken }, "Access token refreshed successfully"))
   }
   catch(error){
     throw new ApiError(401,error?.message || "Invalid refresh token")
@@ -192,6 +189,10 @@ const changeCurrentPassword = asyncHandler(async (req,res)=>{
   const {currentPassword, newPassword} = req.body
   
   const user = await User.findById(req.user?._id)
+
+  if (!user) {
+    throw new ApiError(404, "User not found")
+  }
 
  const isPassCorrect =  await user.isPasswordCorrect(currentPassword)
 

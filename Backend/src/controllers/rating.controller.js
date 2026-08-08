@@ -29,27 +29,29 @@ const saveRating = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Game is not finished")
   }
 
-  const user = await User.findById(req.user._id)
+  const change = calculateRatingChange(result)
 
-  if (!user) {
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user._id,
+    { $inc: { rating: change } },
+    { new: false }
+  )
+
+  if (!updatedUser) {
     throw new ApiError(404, "User not found")
   }
 
-  const before = user.rating
-  const change = calculateRatingChange(result)
+  const before = updatedUser.rating
   const after = before + change
 
   const rating = await Rating.create({
-    userId: user._id,
+    userId: updatedUser._id,
     gameId,
     before,
     after,
     change,
     result
   })
-
-  user.rating = after
-  await user.save({ validateBeforeSave: false })
 
   return res
     .status(201)

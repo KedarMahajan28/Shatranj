@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+dotenv.config({ path: './.env' }); // Load env variables before anything else
+
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';

@@ -11,6 +11,12 @@ const createGame = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Initial FEN is required")
   }
 
+  try {
+    new Chess(initialFEN)
+  } catch (e) {
+    throw new ApiError(400, "Invalid FEN string")
+  }
+
   const game = await Game.create({
     whitePlayer: req.user._id,
     currentFEN: initialFEN
