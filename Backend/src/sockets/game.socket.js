@@ -2,8 +2,7 @@ import { Chess } from "chess.js";
 import { Game } from "../models/game.model.js";
 import {User} from "../models/user.model.js"
 import {Rating} from "../models/rating.model.js"
-
-
+import redis from "../db/redis.js";
 const activeSessions = new Map();
 
 const TIME_LIMIT_MS = 10 * 60 * 1000; // 10 minutes
@@ -186,6 +185,7 @@ async function handleGameEnd(io, gameId, session, winner, reason) {
   });
 
   activeSessions.delete(gameId);
+  await redis.del(`game:${gameId}`);
 }
 
 
@@ -208,8 +208,41 @@ const gameSocket = (io, socket) => {
 
       // Track which socket belongs to which player
       if (!activeSessions.has(gameId)) {
-        // Initialise in-memory session on first join
-        const session = createSession(gameId, game.currentFEN);
+        const cachedStr = await redis.get(`game:${gameId}`);
+        let session;
+        if (cachedStr) {
+          const cached = JSON.parse(cachedStr);
+          session = {
+            chess: new Chess(cached.fen),
+            timers: cached.timers,
+            intervals: { white: null, black: null },
+            drawOffer: cached.drawOffer,
+            playerSockets: new Map(),
+            lastTickAt: cached.lastTickAt,
+          };
+          if (game.status === 'active') {
+            const currentTurn = session.chess.turn() === "w" ? "white" : "black";
+            const elapsed = Date.now() - session.lastTickAt;
+            session.timers[currentTurn] -= elapsed;
+            if (session.timers[currentTurn] < 0) session.timers[currentTurn] = 0;
+            session.lastTickAt = Date.now();
+            await redis.set(`game:${gameId}`, JSON.stringify({
+              fen: session.chess.fen(),
+              timers: session.timers,
+              lastTickAt: session.lastTickAt,
+              drawOffer: session.drawOffer
+            }));
+          }
+        } else {
+          session = createSession(gameId, game.currentFEN);
+          session.lastTickAt = Date.now();
+          await redis.set(`game:${gameId}`, JSON.stringify({
+            fen: game.currentFEN,
+            timers: session.timers,
+            lastTickAt: session.lastTickAt,
+            drawOffer: session.drawOffer
+          }));
+        }
         activeSessions.set(gameId, session);
       }
 
@@ -278,8 +311,22 @@ const gameSocket = (io, socket) => {
       clearTick(session, currentTurn);
       const nextTurn = chess.turn() === "w" ? "white" : "black";
 
+      // Update the precise timer for currentTurn before switching
+      const elapsed = Date.now() - session.lastTickAt;
+      session.timers[currentTurn] -= elapsed;
+      if (session.timers[currentTurn] < 0) session.timers[currentTurn] = 0;
+      session.lastTickAt = Date.now();
+
       // Update FEN in DB 
-      await Game.findByIdAndUpdate(gameId, { currentFEN: chess.fen() });
+      const newFen = chess.fen();
+      await Game.findByIdAndUpdate(gameId, { currentFEN: newFen });
+
+      await redis.set(`game:${gameId}`, JSON.stringify({
+        fen: newFen,
+        timers: session.timers,
+        lastTickAt: session.lastTickAt,
+        drawOffer: session.drawOffer
+      }));
 
       // Broadcast the move to everyone in the room
       io.to(gameId).emit("movePlayed", {
@@ -341,6 +388,12 @@ const gameSocket = (io, socket) => {
 
       const offerer = isWhite ? "white" : "black";
       session.drawOffer = offerer;
+      await redis.set(`game:${gameId}`, JSON.stringify({
+        fen: session.chess.fen(),
+        timers: session.timers,
+        lastTickAt: session.lastTickAt,
+        drawOffer: session.drawOffer
+      }));
 
       io.to(gameId).emit("drawOffered", { offeredBy: offerer });
     } catch (err) {
@@ -369,6 +422,12 @@ const gameSocket = (io, socket) => {
         await handleGameEnd(io, gameId, session, "draw", "draw");
       } else {
         session.drawOffer = null;
+        await redis.set(`game:${gameId}`, JSON.stringify({
+          fen: session.chess.fen(),
+          timers: session.timers,
+          lastTickAt: session.lastTickAt,
+          drawOffer: null
+        }));
         io.to(gameId).emit("drawDeclined");
       }
     } catch (err) {

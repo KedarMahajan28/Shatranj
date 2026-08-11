@@ -9,6 +9,14 @@ services:
     networks:
       - shatranj-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: shatranj-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - shatranj-network
+
   backend:
     build:
       context: ./Backend
@@ -24,8 +32,10 @@ services:
       - ACCESS_TOKEN_EXPIRY=1d
       - REFRESH_TOKEN_SECRET=updatethisthing434343
       - REFRESH_TOKEN_EXPIRY=10d
+      - REDIS_URL=redis://redis:6379
     depends_on:
       - mongodb
+      - redis
     networks:
       - shatranj-network
 
